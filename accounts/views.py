@@ -104,7 +104,9 @@ class VerifyCodeAPI(APIView):
             if check and query:
                 query.password = make_password(new_password)
                 query.save()
-                return Response(parser.data, status=status.HTTP_201_CREATED)
+                response = Response(parser.data, status=status.HTTP_201_CREATED)
+                response.delete_cookie('password')
+                return response
             else:
                 return Response({"message": "Code is incorrect"}, status=status.HTTP_404_NOT_FOUND)
 
