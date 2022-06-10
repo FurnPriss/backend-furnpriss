@@ -27,9 +27,9 @@ class RegistrationViewAPI(APIView):
 
         serializer = self.serializer(data=data)
         pattern =  r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.com\b'
-        regex = re.fullmatch(pattern, data["email"])
 
         if serializer.is_valid():
+            regex = re.fullmatch(pattern, data["email"])
             if not regex:
                 return Response({"email": "Email must have a pattern '.com'"},status=status.HTTP_400_BAD_REQUEST)
 

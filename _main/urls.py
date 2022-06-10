@@ -26,4 +26,5 @@ urlpatterns = format_suffix_patterns([
     path('api/', include('dummy_opennotes.urls')),
     path('api/', include('endpointfor_AuthenticatedUser.urls')),
     path('api/', include('tokens.urls', namespace='tokens')),
+    path('api/', include('price_predict.urls', namespace='pred')),
 ])
