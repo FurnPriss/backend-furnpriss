@@ -93,6 +93,7 @@ INSTALLED_APPS = [
     # project apps
     'accounts.apps.AccountsConfig',
     'tokens',
+    'price_predict',
     
     # testing apps
     'dummy_opennotes',
