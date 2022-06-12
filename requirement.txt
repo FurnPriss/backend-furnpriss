@@ -26,11 +26,9 @@ Keras-Preprocessing==1.1.2
 libclang==14.0.1
 Markdown==3.3.7
 mysqlclient==2.1.0
-numpy==1.21.6
 oauthlib==3.2.0
 opt-einsum==3.3.0
 packaging==21.3
-pandas==1.1.5
 passlib==1.7.4
 protobuf==3.19.4
 pyasn1==0.4.8

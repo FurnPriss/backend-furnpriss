@@ -2,9 +2,11 @@ from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
 from .serializers import UserRegistration, UserModel, ResetPassword, VerifyCodeModel, CodeVerify
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 from django.core.mail import send_mail
 from rest_framework import status
 from django.contrib.auth.hashers import make_password
+from django.contrib.auth import logout
 from dotenv import load_dotenv
 import shortuuid
 from datetime import *
@@ -81,6 +83,18 @@ class GenerateCodeAPI(APIView):
                 )
         
         return Response(retrive.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class LogoutView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        # try:
+        print(request.headers)
+        request.user.auth_token.delete()
+        # except:
+        #     return Response({"message": "You're session has expired"}, status=status.HTTP_404_NOT_FOUND)
+        logout(request)
+        return Response({"message": "You're successfuly logging out"}, status=status.HTTP_200_OK)
 
 class VerifyCodeAPI(APIView):
     serializer_class = CodeVerify

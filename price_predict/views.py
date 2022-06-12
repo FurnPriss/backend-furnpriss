@@ -5,13 +5,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from .serializers import pricePredictSerializer
 from .schema import ModelConstant
-import pandas as pd
-import tensorflow as tf
 import keras as K
 from keras.models import load_model
-from sklearn.preprocessing import MinMaxScaler
-from pickle import load
-import numpy as np
 import joblib
 
 def rmse(y_true, y_pred):
@@ -42,19 +37,19 @@ class pricePredictView(APIView):
         }
         parser = self.serializer(data=data)
         if parser.is_valid():
+            provide = []
             try:
                 obj = ModelConstant.process_data(data['category'], data['qty'], data['product_weight_g'], data['comp_1'], data['ps1'])
+                nilai = list(obj.values())
             except KeyError:
                 return Response(
                     {"message": "Category field must be float or number"},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-
-            df = pd.DataFrame.from_dict(obj, orient='index').transpose()
-            nilai = np.array(df.values)
-
+            nilai = list(obj.values())
+            provide.append(nilai)
             scaler_load = joblib.load("./result/scaler_v2.save")
-            hasil_scale = scaler_load.transform(nilai)
+            hasil_scale = scaler_load.transform(provide)
             prediction_result = str(self.model.predict(hasil_scale)[0][0])
             return Response(
                 {
