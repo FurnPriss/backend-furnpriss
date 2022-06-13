@@ -1,3 +1,4 @@
+from datetime import date
 from django.contrib.auth.models import BaseUserManager
 from typing import Optional
 
@@ -51,9 +52,17 @@ class VerifyCodeManager(BaseUserManager):
         data.save()
     
 class createProduct(BaseUserManager):
-    def save_product(self, user_id:Optional[str], id_product, stock, height, width, depth, cost, material, price):
+    def save_product(self, user_id:Optional[str], id_product,category, stock, height, width, depth, cost, material, price):
         if id_product is None:
             raise TypeError("Code is important field")
 
-        data = self.model(user_id=user_id, id_product=id_product, stock=stock, height=height, width=width, depth=depth, cost=cost, material=material, price=price)
+        data = self.model(user_id=user_id, id_product=id_product, category=category,stock=stock, height=height, width=width, depth=depth, cost=cost, material=material, price=price)
+        data.save()
+
+class stockOut(BaseUserManager):
+    def save_dates(self, product_id,dates:Optional[date]):
+        if dates is None:
+            raise TypeError("Fill date when stock Out happened")
+        
+        data = self.model(product_id=product_id, date=dates)
         data.save()

@@ -2,6 +2,7 @@ from rest_framework import serializers
 from .models import Product
 
 class pricePredictSerializer(serializers.Serializer):
+    category = serializers.CharField()
     id_product = serializers.CharField()
     stock = serializers.IntegerField()
     height = serializers.FloatField()
@@ -9,8 +10,7 @@ class pricePredictSerializer(serializers.Serializer):
     depth = serializers.FloatField()
     cost = serializers.FloatField()
     material = serializers.CharField()
-    price = serializers.FloatField()
 
     class Meta:
         model = Product
-        fields = ('id_product', 'stock', 'height', 'width', 'depth', 'cost', 'material', 'price',)
+        fields = ('category','id_product', 'stock', 'height', 'width', 'depth', 'cost', 'material',)

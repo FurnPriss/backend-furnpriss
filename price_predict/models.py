@@ -1,10 +1,11 @@
 from django.db import models
 from django.conf import settings
-from manager import createProduct
+from manager import createProduct, stockOut
 
 class Product(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='usr_id')
     id_product = models.CharField(primary_key=True, max_length=255)
+    category = models.CharField(max_length=255)
     stock = models.IntegerField()
     height = models.FloatField()
     width = models.FloatField()
@@ -17,3 +18,9 @@ class Product(models.Model):
 
     class Meta:
         ordering = ('id_product',)
+
+class stockOut(models.Model):
+    product_id = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='prod_id')
+    date = models.DateTimeField()
+    objects= stockOut
+
