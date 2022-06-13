@@ -5,6 +5,7 @@ from manager import createProduct
 class Product(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='usr_id')
     id_product = models.CharField(primary_key=True, max_length=255)
+    category = models.CharField(max_length=255)
     stock = models.IntegerField()
     height = models.FloatField()
     width = models.FloatField()
