@@ -1,1 +1,1 @@
-from .base import UserManager, VerifyCodeManager
+from .base import UserManager, VerifyCodeManager, createProduct

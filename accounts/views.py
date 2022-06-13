@@ -84,18 +84,6 @@ class GenerateCodeAPI(APIView):
         
         return Response(retrive.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class LogoutView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request):
-        # try:
-        print(request.headers)
-        request.user.auth_token.delete()
-        # except:
-        #     return Response({"message": "You're session has expired"}, status=status.HTTP_404_NOT_FOUND)
-        logout(request)
-        return Response({"message": "You're successfuly logging out"}, status=status.HTTP_200_OK)
-
 class VerifyCodeAPI(APIView):
     serializer_class = CodeVerify
     
