@@ -3,11 +3,14 @@ from django.contrib.auth.models import (
     AbstractBaseUser, PermissionsMixin
 )
 from django.db import models
+import nanoid
 from rest_framework_simplejwt.tokens import RefreshToken
 from manager import UserManager, VerifyCodeManager
 
+
 # Create your models here.
 class UserModel(AbstractBaseUser, PermissionsMixin):
+    id = models.CharField(primary_key=True, default=nanoid.generate(size=32), editable=False, max_length=32)
     username = models.CharField(max_length=255)
     email = models.EmailField(unique=True)
     password = models.CharField(max_length=255)
@@ -22,11 +25,7 @@ class UserModel(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         text = self.email if self.email != '' else self.username
         return f"{text}"
-    
-    @property
-    def tokens(self):
-        token = RefreshToken.for_user(self)
-        return {"access-token": str(token.access_token), "refresh-token": str(token)}
+
 
 class VerifyCodeModel(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='users_id')
