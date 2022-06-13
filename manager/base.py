@@ -1,3 +1,4 @@
+from datetime import date
 from django.contrib.auth.models import BaseUserManager
 from typing import Optional
 
@@ -56,4 +57,12 @@ class createProduct(BaseUserManager):
             raise TypeError("Code is important field")
 
         data = self.model(user_id=user_id, id_product=id_product, category=category,stock=stock, height=height, width=width, depth=depth, cost=cost, material=material, price=price)
+        data.save()
+
+class stockOut(BaseUserManager):
+    def save_dates(self, product_id,dates:Optional[date]):
+        if dates is None:
+            raise TypeError("Fill date when stock Out happened")
+        
+        data = self.model(product_id=product_id, date=dates)
         data.save()

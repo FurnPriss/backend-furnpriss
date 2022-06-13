@@ -1,13 +1,13 @@
 from django.conf import settings
 from rest_framework.views import APIView
+from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
-
 from price_predict.schema.default import ModelConstant
 from .serializers import pricePredictSerializer
 from keras.models import load_model
-from .models import Product
+from .models import Product, stockOut
 import joblib, jwt, keras as K
 
 def rmse(y_true, y_pred):
@@ -16,7 +16,6 @@ def rmse(y_true, y_pred):
 
 class pricePredictView(APIView):
     permission_classes = [IsAuthenticated]
-    
 
     def __init__(self):
         self.serializer = pricePredictSerializer
@@ -24,11 +23,21 @@ class pricePredictView(APIView):
         self.model.load_weights('./model/model_repfit_weight_v1.h5')
     
     def get(self, request, *args, **kwargs):
+        user_id = request.headers['Authorization']
+        split = user_id.split(" ")
+        secret_code = settings.SECRET_KEY
+        algorithm = settings.SIMPLE_JWT['ALGORITHM']
+        decode = jwt.decode(split[1], secret_code, algorithms=[algorithm])
+        data = Product.objects.filter(user_id=decode["user_id"]).values("category", "id_product", "price", "stock")
+        x = 0
+        for i in data:
+            x += i["stock"]
         return Response({
-            'error': False,
-            'message': 'Now, you can predict based on the parameters you specify!!',
-        })
-    
+            "product": data,
+            "all_stock": x,
+            "total": len(data)
+        }, status=status.HTTP_200_OK)
+
     def post(self, request):
         data = {
             "category": request.data['category'],
@@ -67,3 +76,22 @@ class pricePredictView(APIView):
             return Response({"message": "Product has been saved", "price": conv_money}, status=status.HTTP_201_CREATED)
         
         return Response({"message": "Failed: Incorrect data type entered"}, status=status.HTTP_400_BAD_REQUEST)
+
+class getProduct(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, category):
+        user_id = request.headers['Authorization']
+        split = user_id.split(" ")
+        secret_code = settings.SECRET_KEY
+        algorithm = settings.SIMPLE_JWT['ALGORITHM']
+        decode = jwt.decode(split[1], secret_code, algorithms=[algorithm])
+        data = Product.objects.filter(user_id=decode["user_id"]).filter(category=category).values("category", "id_product", "price", "stock")
+        x = 0
+        for i in data:
+            x += i["stock"]
+        return Response({
+            "product": data,
+            "all_stock": x,
+            "total": len(data)
+        }, status=status.HTTP_200_OK)
