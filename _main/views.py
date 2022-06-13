@@ -9,6 +9,7 @@ class ApiRoot(APIView):
             'dummy_opennotes': reverse('dummy-opennotes-list', request=request, format=format),
             'authenticated_endpoint': reverse('lockedEndpoint', request=request, format=format),
             'token': '-----------',
+            'token_blacklist': reverse('tokens:blacklist', request=request, format=format),
             'token_obtain_pair': reverse('tokens:obtain_pair', request=request, format=format),
             'token_refresh': reverse('tokens:refresh', request=request, format=format),
             'token_verify': reverse('tokens:verify', request=request, format=format),

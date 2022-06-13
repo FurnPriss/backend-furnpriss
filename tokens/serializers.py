@@ -1,10 +1,23 @@
 from django.conf import settings
 from django.contrib.auth.models import update_last_login
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
+from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken
 from rest_framework_simplejwt.tokens import UntypedToken
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer, TokenVerifySerializer
+from rest_framework_simplejwt.serializers import (TokenBlacklistSerializer, TokenObtainPairSerializer, TokenRefreshSerializer, TokenVerifySerializer,)
 
 from accounts.models import UserModel
+
+class CustomTokenBlacklistSerializer(TokenBlacklistSerializer):
+    refresh = serializers.CharField()
+    
+    def validate(self, attrs):
+        refresh = self.token_class(attrs['refresh'])
+        try:
+            refresh.blacklist()
+        except AttributeError:
+            pass
+        return {}
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer, serializers.ModelSerializer):
@@ -17,7 +30,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer, serializers.Mod
         refresh = self.get_token(self.user)
 
         data = {
-            "error": False,
             "message": "The tokens has been generated successfully.",
             "data": {
                 "access_token": str(refresh.access_token),
@@ -41,8 +53,7 @@ class CustomTokenRefreshSerializer(TokenRefreshSerializer):
         refresh = self.token_class(attrs["refresh"])
 
         data = {
-            "error": False,
-            "message": "Access token regenerated successfuly.",
+            "message": "Access token regenerated successfully.",
             "data": {
                 "access_token": str(refresh.access_token)
             }
@@ -70,8 +81,14 @@ class CustomTokenRefreshSerializer(TokenRefreshSerializer):
 class CustomTokenVerifySerializer(TokenVerifySerializer):
     def validate(self, attrs):
         token = UntypedToken(attrs["token"])
+        
+        if (
+            "rest_framework_simplejwt.token_blacklist" in settings.INSTALLED_APPS
+        ):
+            jti = token.get(settings.SIMPLE_JWT["JTI_CLAIM"])
+            if BlacklistedToken.objects.filter(token__jti=jti).exists():
+                raise ValidationError("Token is blacklisted")
 
         return {
-            "error": False,
             "message": "The token is verified and can be used.",
         }
