@@ -42,7 +42,6 @@ class pricePredictView(APIView):
             "price": request.data['price']
         }
         parser = self.serializer(data=data)
-        # print(request.headers)
 
         user_id = request.headers['Authorization']
         split = user_id.split(" ")

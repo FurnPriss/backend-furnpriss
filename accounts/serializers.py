@@ -18,6 +18,14 @@ class ResetPassword(serializers.ModelSerializer):
         model = UserModel
         fields = ("email", "password", "confirm_password",)
 
+class updateAccountSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(max_length=255, min_length=8)
+    confirm_password = serializers.CharField(max_length=255, min_length=8)
+
+    class Meta:
+        model = UserModel
+        fields = ("password", "confirm_password",)
+
 class CodeVerify(serializers.ModelSerializer):
     code = serializers.CharField(min_length=5, max_length=255)
 
