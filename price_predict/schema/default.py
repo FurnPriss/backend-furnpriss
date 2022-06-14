@@ -20,7 +20,7 @@ class ModelConstant:
             ModelConstant.__furniture["barang"]["Chairs"] = 1.0
             ModelConstant.__furniture["barang"]["Tables & Desks"] = 0.0
             ModelConstant.__furniture["barang"]["Wardrobes"] = 0.0
-        elif category == "Tables & Desk":
+        elif category == "Tables & Desks":
             ModelConstant.__furniture["barang"]["Beds"] = 0.0
             ModelConstant.__furniture["barang"]["Chairs"] = 0.0
             ModelConstant.__furniture["barang"]["Tables & Desks"] = 1.0
