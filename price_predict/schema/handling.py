@@ -24,7 +24,7 @@ class QuerySet:
         global db, cursor 
         db.close()
     
-    def dataGraph(self, month):
+    def dataGraph(self, month, user_id):
         global cursor
 
         self.openDB()
@@ -34,7 +34,8 @@ class QuerySet:
                     p.category, sum(s.your_price) as revenue, s.removed_stock 
                 FROM
                     price_predict_product p, price_predict_stockout s
-                WHERE month(s.created_date)='{month}' AND s.product_id=p.id_product
+                WHERE 
+                    month(s.created_date)='{month}' AND s.product_id=p.id_product AND s.user_id=p.user_id AND s.user_id='{user_id}'
                 GROUP BY p.category
                 ORDER BY s.removed_stock DESC
             """

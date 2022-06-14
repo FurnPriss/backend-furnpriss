@@ -130,6 +130,7 @@ class getProduct(APIView):
         secret_code = settings.SECRET_KEY
         algorithm = settings.SIMPLE_JWT['ALGORITHM']
         decode = jwt.decode(split[1], secret_code, algorithms=[algorithm])
+
         data = Product.objects.filter(user_id=decode["user_id"]).filter(category=category).values("category", "id_product", "price", "stock")
         x = 0
         for i in data:
@@ -198,12 +199,18 @@ class graphStockout(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, month):
+        user_id = request.headers['Authorization']
+        split = user_id.split(" ")
+        secret_code = settings.SECRET_KEY
+        algorithm = settings.SIMPLE_JWT['ALGORITHM']
+        decode = jwt.decode(split[1], secret_code, algorithms=[algorithm])
+
         cate = []
         remo = []
         revenue = 0
         obj = QuerySet()
         try:
-            container = obj.dataGraph(month)
+            container = obj.dataGraph(month, decode['user_id'])
             if len(container) == 0:
                 return Response({"message": "Data unvailable"}, status=status.HTTP_404_NOT_FOUND)
             
