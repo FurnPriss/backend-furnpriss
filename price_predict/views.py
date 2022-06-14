@@ -57,14 +57,19 @@ class pricePredictView(APIView):
         algorithm = settings.SIMPLE_JWT['ALGORITHM']
         decode = jwt.decode(split[1], secret_code, algorithms=[algorithm])
 
+        if data['cost'] <= 300000:
+            return Response({"message": "Cost must be above 300K"}, status=status.HTTP_400_BAD_REQUEST)
+
         prov = []
         conv_to_arab = data['cost']/3900
-        obj = ModelConstant.processing(data["height"], data["depth"], data["width"], conv_to_arab,data["category"], data["material"])
+        print(conv_to_arab)
+        obj = ModelConstant.processing(data["height"], data["depth"], data["width"], conv_to_arab, data["category"], data["material"])
         conv = list(obj.values())
         prov.append(conv)
 
         scaler_load = joblib.load("./model/repfit_scaler.joblib")
         result_scale = scaler_load.transform(prov)
+        print(result_scale)
         prediction_result = str(self.model.predict(result_scale)[0][0])
         price = (float(prediction_result) * (9585 - 10) + 10)
         conv_money = price *  3900 

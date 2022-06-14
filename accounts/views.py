@@ -137,7 +137,7 @@ class VerifyCodeAPI(APIView):
             if check and query:
                 query.password = make_password(new_password)
                 query.save()
-                response = Response(status=status.HTTP_201_CREATED)
+                response = Response({"message": "Password has been updated"},status=status.HTTP_201_CREATED)
                 response.delete_cookie('password')
                 return response
             else:
