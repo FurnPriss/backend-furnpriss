@@ -6,7 +6,6 @@ from rest_framework.permissions import IsAuthenticated
 from django.core.mail import send_mail
 from rest_framework import status
 from django.contrib.auth.hashers import make_password
-from django.contrib.auth import logout
 from dotenv import load_dotenv
 from datetime import *
 from django.conf import settings
