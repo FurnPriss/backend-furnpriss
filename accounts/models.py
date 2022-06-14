@@ -5,12 +5,12 @@ from django.contrib.auth.models import (
 from django.db import models
 import nanoid
 from rest_framework_simplejwt.tokens import RefreshToken
-from manager import UserManager, VerifyCodeManager
+from manager import UserManager, VerifyCodeManager, generators
 
 
 # Create your models here.
 class UserModel(AbstractBaseUser, PermissionsMixin):
-    id = models.CharField(primary_key=True, default=nanoid.generate(size=32), editable=False, max_length=32)
+    id = models.CharField(primary_key=True, default=generators.get_default_id, editable=False, max_length=32)
     username = models.CharField(max_length=255)
     email = models.EmailField(unique=True)
     password = models.CharField(max_length=255)

@@ -3,12 +3,14 @@ from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import generics, mixins, status
 from price_predict.schema.default import ModelConstant
-from .serializers import pricePredictSerializer
 from keras.models import load_model
-from .models import Product, stockOut
 import joblib, jwt, keras as K
+
+from .models import Product
+from .serializers import (pricePredictSerializer, StockInSerializer, StockOutSerializer)
+from accounts.models import UserModel
 
 def rmse(y_true, y_pred):
     return K.sqrt(K.mean(K.square(y_pred - y_true)))
@@ -101,3 +103,53 @@ class getProduct(APIView):
             "all_stock": x,
             "total": len(data)
         }, status=status.HTTP_200_OK)
+
+
+class StockInView(generics.GenericAPIView, mixins.CreateModelMixin):
+    serializer_class = StockInSerializer
+    
+    def post(self, request, *args, **kwargs):
+        input_data = {
+            "added_stock": request.data['added_stock'],
+            "product": kwargs.get('product_id'),
+        }
+        
+        token_jwt = request.headers['Authorization'].split(" ")[1]
+        decoded_token_jwt = jwt.decode(token_jwt, settings.SECRET_KEY, algorithms=settings.SIMPLE_JWT['ALGORITHM'])
+        
+        # create user object
+        user_object = UserModel.objects.get(id=decoded_token_jwt["user_id"])
+
+        serializer = self.get_serializer(data=input_data)
+        serializer.is_valid(raise_exception=True)
+        serializer.validated_data["user"] = user_object
+        serializer.save()
+        headers = self.get_success_headers(serializer.data)
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+    
+
+class StockOutView(generics.GenericAPIView, mixins.CreateModelMixin):
+    serializer_class = StockOutSerializer
+    
+    def post(self, request, *args, **kwargs):
+        input_data = {
+            "removed_stock": request.data["removed_stock"],
+            "your_price": request.data["your_price"],
+            "date": request.data["date"],
+            "product": kwargs.get("product_id"),
+        }
+        
+        token_jwt = request.headers['Authorization'].split(" ")[1]
+        decoded_token_jwt = jwt.decode(token_jwt, settings.SECRET_KEY, algorithms=settings.SIMPLE_JWT['ALGORITHM'])
+        
+        # create user object
+        user_object = UserModel.objects.get(id=decoded_token_jwt["user_id"])
+        
+        serializer = self.get_serializer(data=input_data)
+        serializer.is_valid(raise_exception=True)
+        serializer.validated_data['user'] = user_object
+        serializer.save()
+        headers = self.get_success_headers(serializer.data)
+        
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
