@@ -37,7 +37,9 @@ class RegistrationViewAPI(APIView):
 
             UserModel.objects.create_superuser(data["username"], data["email"], data["password"])
 
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response({
+                "username": serializer.data["username"]
+                }, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -135,7 +137,7 @@ class VerifyCodeAPI(APIView):
             if check and query:
                 query.password = make_password(new_password)
                 query.save()
-                response = Response(parser.data, status=status.HTTP_201_CREATED)
+                response = Response(status=status.HTTP_201_CREATED)
                 response.delete_cookie('password')
                 return response
             else:
