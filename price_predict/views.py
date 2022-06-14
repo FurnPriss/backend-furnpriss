@@ -58,7 +58,8 @@ class pricePredictView(APIView):
         decode = jwt.decode(split[1], secret_code, algorithms=[algorithm])
 
         prov = []
-        obj = ModelConstant.processing(data["height"], data["depth"], data["width"], data["cost"],data["category"], data["material"])
+        conv_to_arab = data['cost']/3900
+        obj = ModelConstant.processing(data["height"], data["depth"], data["width"], conv_to_arab,data["category"], data["material"])
         conv = list(obj.values())
         prov.append(conv)
 
