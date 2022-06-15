@@ -1,14 +1,18 @@
+from numpy import load
 import pymysql, os
 from django.conf import settings
+from dotenv import load_dotenv
+
+load_dotenv('././.env')
 
 db = cursor = None 
 
 class QuerySet:
     def __init__(self):
-        self.user = "root"
-        self.database = "trvStore"
-        self.password = ""
-        self.host = "localhost"
+        self.user = os.getenv("NAME")
+        self.database = os.getenv("DATABASE")
+        self.password = os.getenv("PASSWORD")
+        self.host = os.getenv("HOST")
     
     def openDB(self):
         global db, cursor
