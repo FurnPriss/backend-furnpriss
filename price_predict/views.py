@@ -4,11 +4,10 @@ from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import generics, mixins, status
-from price_predict.schema.default import ModelConstant
+from .schema import ModelConstant, QuerySet
 from keras.models import load_model
 import joblib, jwt, keras as K
 from datetime import *
-
 from .models import Product
 from .serializers import (pricePredictSerializer, StockInSerializer, StockOutSerializer)
 from accounts.models import UserModel
@@ -131,6 +130,7 @@ class getProduct(APIView):
         secret_code = settings.SECRET_KEY
         algorithm = settings.SIMPLE_JWT['ALGORITHM']
         decode = jwt.decode(split[1], secret_code, algorithms=[algorithm])
+
         data = Product.objects.filter(user_id=decode["user_id"]).filter(category=category).values("category", "id_product", "price", "stock")
         x = 0
         for i in data:
@@ -143,6 +143,8 @@ class getProduct(APIView):
 
 
 class StockInView(generics.GenericAPIView, mixins.CreateModelMixin):
+    permission_classes = [IsAuthenticated]
+
     serializer_class = StockInSerializer
     
     def post(self, request, *args, **kwargs):
@@ -167,6 +169,8 @@ class StockInView(generics.GenericAPIView, mixins.CreateModelMixin):
     
 
 class StockOutView(generics.GenericAPIView, mixins.CreateModelMixin):
+    permission_classes = [IsAuthenticated]
+
     serializer_class = StockOutSerializer
     
     def post(self, request, *args, **kwargs):
@@ -190,3 +194,35 @@ class StockOutView(generics.GenericAPIView, mixins.CreateModelMixin):
         headers = self.get_success_headers(serializer.data)
         
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+class graphStockout(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, month):
+        user_id = request.headers['Authorization']
+        split = user_id.split(" ")
+        secret_code = settings.SECRET_KEY
+        algorithm = settings.SIMPLE_JWT['ALGORITHM']
+        decode = jwt.decode(split[1], secret_code, algorithms=[algorithm])
+
+        cate = []
+        remo = []
+        revenue = 0
+        obj = QuerySet()
+        try:
+            container = obj.dataGraph(month, decode['user_id'])
+            if len(container) == 0:
+                return Response({"message": "Data unvailable"}, status=status.HTTP_404_NOT_FOUND)
+            
+            for i in range(len(container)):
+                cate.append(container[i]["category"])
+                remo.append(container[i]["removed_stock"])
+                revenue += container[i]["revenue"]
+            return Response({
+                "revenue": revenue,
+                "category": cate,
+                "removed_stock": remo
+            }, status=status.HTTP_200_OK)
+
+        except:
+            return Response({"message": "Error occurs comes from internal technical"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
