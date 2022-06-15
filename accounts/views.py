@@ -6,12 +6,10 @@ from rest_framework.permissions import IsAuthenticated
 from django.core.mail import send_mail
 from rest_framework import status
 from django.contrib.auth.hashers import make_password
-from dotenv import load_dotenv
 from datetime import *
 from django.conf import settings
 import re, os, jwt, shortuuid
 
-load_dotenv(dotenv_path='./.env')
 # Create your views here.
 class RegistrationViewAPI(APIView):
     serializer_class = UserRegistration
@@ -100,7 +98,7 @@ class GenerateCodeAPI(APIView):
 
             if exist_email:
                 VerifyCodeModel.objects.create_code(user_id=choice_email.id, code=random)
-                send_mail(subject, msg, os.getenv("EMAIL"),[choice_email.email], fail_silently=False)
+                send_mail(subject, msg, os.environ.get("EMAIL"),[choice_email.email], fail_silently=False)
                 response= Response({"message": "We sent email to you. Please check your inbox"}, status=status.HTTP_201_CREATED)
                 response.set_cookie(key="password", value=data["password"], httponly=False, expires=datetime.now() + timedelta(seconds=age), max_age=age)
                 return response
