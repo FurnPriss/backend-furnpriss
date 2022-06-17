@@ -16,5 +16,4 @@ class ApiRoot(APIView):
             'user': '-----------',
             'user_register': reverse('user:register', request=request, format=format),
             'user_reset': reverse('user:reset', request=request, format=format),
-            'user_verify': reverse('user:verify', request=request, format=format),
         })
