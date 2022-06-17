@@ -1,6 +1,6 @@
 from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
-from .serializers import UserRegistration, UserModel, ResetPassword, VerifyCodeModel, CodeVerify, updateAccountSerializer
+from .serializers import UserRegistration, UserModel, ResetPassword, updateAccountSerializer
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.core.mail import send_mail
@@ -77,9 +77,6 @@ class GenerateCodeAPI(APIView):
 
     def post(self, request):
         random = shortuuid.ShortUUID().random(length=5)
-        age = 365*24*60*60
-        subject = "Reset Password"
-        msg = f"Don't publish your verification code whatever the reason\nYour verify code: {random}"
 
         data = {
             "email": request.data["email"],
@@ -88,19 +85,18 @@ class GenerateCodeAPI(APIView):
         }
 
         retrive = self.reset(data=data)
-        exist_email = UserModel.objects.filter(email=data["email"]).exists()
-        choice_email = get_object_or_404(UserModel, email=data["email"])
-
-        if data["password"] != data["confirm_password"]:
-            return Response({"message": "Please correct, password and confirm password must be same"},status=status.HTTP_404_NOT_FOUND)
 
         if retrive.is_valid():
+            exist_email = UserModel.objects.filter(email=retrive.data["email"]).exists()
+            choice_email = get_object_or_404(UserModel, email=retrive.data["email"])
+
+            if retrive.data["password"] != retrive.data["confirm_password"]:
+                return Response({"message": "Please correct, password and confirm password must be same"},status=status.HTTP_404_NOT_FOUND)
 
             if exist_email:
-                VerifyCodeModel.objects.create_code(user_id=choice_email.id, code=random)
-                send_mail(subject, msg, os.environ.get("EMAIL"),[choice_email.email], fail_silently=False)
-                response= Response({"message": "We sent email to you. Please check your inbox"}, status=status.HTTP_201_CREATED)
-                response.set_cookie(key="password", value=data["password"], httponly=False, expires=datetime.now() + timedelta(seconds=age), max_age=age)
+                choice_email.password = make_password(retrive.data['password'])
+                choice_email.save()
+                response= Response({"message": "Password has been updated"}, status=status.HTTP_201_CREATED)
                 return response
             else:
                 return Response(
@@ -111,33 +107,3 @@ class GenerateCodeAPI(APIView):
                 )
         
         return Response(retrive.errors, status=status.HTTP_400_BAD_REQUEST)
-
-class VerifyCodeAPI(APIView):
-    serializer_class = CodeVerify
-    
-    def __init__(self):
-        self.verify = CodeVerify
-
-    def post(self, request):
-        new_password = request.COOKIES["password"]
-
-        data = {
-            "code" : request.data["code"]
-        }
-
-        check = VerifyCodeModel.objects.filter(code=data["code"]).exists()
-        userid_out = get_object_or_404(VerifyCodeModel, code=data["code"])
-        query = get_object_or_404(UserModel,id=userid_out.user_id)
-        parser = self.verify(data=data)
-
-        if parser.is_valid():
-            if check and query:
-                query.password = make_password(new_password)
-                query.save()
-                response = Response({"message": "Password has been updated"},status=status.HTTP_201_CREATED)
-                response.delete_cookie('password')
-                return response
-            else:
-                return Response({"message": "Code is incorrect"}, status=status.HTTP_404_NOT_FOUND)
-
-        return Response(parser.errors, status=status.HTTP_400_BAD_REQUEST)
