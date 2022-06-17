@@ -69,7 +69,7 @@ class pricePredictView(APIView):
             
             Product.objects.save_product(
                 decode['user_id'], parser.data["id_product"], parser.data['category'], parser.data['stock'], parser.data['height'], 
-                parser.data['width'], parser.data['depth'], parser.data['cost'], parser.data['material'], parser.data['price']
+                parser.data['width'], parser.data['depth'], parser.data['cost'], parser.data['material'], conv_money
             )
 
             return Response(
@@ -82,7 +82,7 @@ class pricePredictView(APIView):
                     "depth": parser.data["depth"],
                     "stock": parser.data["stock"],
                     "cost": parser.data["cost"],
-                    "price": conv_money
+                    "price": conv_money,
                 }
             , status=status.HTTP_201_CREATED)
         
