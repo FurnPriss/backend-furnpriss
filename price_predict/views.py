@@ -68,7 +68,7 @@ class pricePredictView(APIView):
             conv_money = price *  3900 
             
             Product.objects.save_product(
-                decode['user_id'], parser.data["id"], parser.data['category'], parser.data['stock'], parser.data['height'], 
+                decode['user_id'], parser.data["id_product"], parser.data['category'], parser.data['stock'], parser.data['height'], 
                 parser.data['width'], parser.data['depth'], parser.data['cost'], parser.data['material'], parser.data['price']
             )
 
