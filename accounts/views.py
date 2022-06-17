@@ -3,12 +3,11 @@ from django.shortcuts import get_object_or_404
 from .serializers import UserRegistration, UserModel, ResetPassword, updateAccountSerializer
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from django.core.mail import send_mail
 from rest_framework import status
 from django.contrib.auth.hashers import make_password
 from datetime import *
 from django.conf import settings
-import re, os, jwt, shortuuid
+import re, jwt
 
 # Create your views here.
 class RegistrationViewAPI(APIView):
@@ -68,6 +67,23 @@ class updateAccount(APIView):
         
         return Response({"message": "Password failed to update"}, status=status.HTTP_400_BAD_REQUEST)
 
+class ViewAccount(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user_id = request.headers['Authorization']
+        split = user_id.split(" ")
+        secret_code = settings.SECRET_KEY
+        algorithm = settings.SIMPLE_JWT['ALGORITHM']
+        decode = jwt.decode(split[1], secret_code, algorithms=[algorithm])
+
+        user = get_object_or_404(UserModel, id=decode['user_id'])
+        return Response({
+            "email": user.email,
+            "username": user.username
+        }, status=status.HTTP_200_OK)
+
+
     
 class GenerateCodeAPI(APIView):
     serializer_class = ResetPassword
@@ -76,8 +92,6 @@ class GenerateCodeAPI(APIView):
         self.reset = ResetPassword
 
     def post(self, request):
-        random = shortuuid.ShortUUID().random(length=5)
-
         data = {
             "email": request.data["email"],
             "password": request.data["password"],
