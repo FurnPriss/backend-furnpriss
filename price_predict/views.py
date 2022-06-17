@@ -98,7 +98,6 @@ class getProduct(APIView):
         secret_code = settings.SECRET_KEY
         algorithm = settings.SIMPLE_JWT['ALGORITHM']
         decode = jwt.decode(split[1], secret_code, algorithms=[algorithm])
-        x = get_object_or_404(Product, category=request.data["category"])
         data = Product.objects.filter(user_id=decode["user_id"]).filter(category=category).values("category", "id_product", "price", "stock")
         x = 0
         for i in data:
