@@ -25,10 +25,3 @@ class updateAccountSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserModel
         fields = ("password", "confirm_password",)
-
-class CodeVerify(serializers.ModelSerializer):
-    code = serializers.CharField(min_length=5, max_length=255)
-
-    class Meta:
-        model = VerifyCodeModel
-        fields = ("code",)
