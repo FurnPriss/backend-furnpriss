@@ -92,13 +92,13 @@ class pricePredictView(APIView):
 class getProduct(APIView):
     permission_classes = [IsAuthenticated]
     
-    def get(self, request, category):
+    def post(self, request, category):
         user_id = request.headers['Authorization']
         split = user_id.split(" ")
         secret_code = settings.SECRET_KEY
         algorithm = settings.SIMPLE_JWT['ALGORITHM']
         decode = jwt.decode(split[1], secret_code, algorithms=[algorithm])
-        x = get_object_or_404(Product, category=category)
+        x = get_object_or_404(Product, category=request.data["category"])
         data = Product.objects.filter(user_id=decode["user_id"]).filter(category=category).values("category", "id_product", "price", "stock")
         x = 0
         for i in data:
