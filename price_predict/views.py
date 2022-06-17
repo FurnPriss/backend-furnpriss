@@ -92,7 +92,7 @@ class pricePredictView(APIView):
 class getProduct(APIView):
     permission_classes = [IsAuthenticated]
     
-    def post(self, request, category):
+    def get(self, request, category):
         user_id = request.headers['Authorization']
         split = user_id.split(" ")
         secret_code = settings.SECRET_KEY
