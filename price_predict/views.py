@@ -1,6 +1,7 @@
 from django.conf import settings
 from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import generics, mixins, status
@@ -148,25 +149,52 @@ class StockInView(generics.GenericAPIView, mixins.CreateModelMixin):
     serializer_class = StockInSerializer
     
     def post(self, request, *args, **kwargs):
-        input_data = {
-            "added_stock": request.data['added_stock'],
-            "product": kwargs.get('product_id'),
-        }
-        
-        token_jwt = request.headers['Authorization'].split(" ")[1]
-        decoded_token_jwt = jwt.decode(token_jwt, settings.SECRET_KEY, algorithms=settings.SIMPLE_JWT['ALGORITHM'])
-        
-        # create user object
-        user_object = UserModel.objects.get(id=decoded_token_jwt["user_id"])
+        try:
+            input_data = {
+                "added_stock": request.data['added_stock'],
+                "product": kwargs.get('product_id'),
+            }
+            
+            token_jwt = request.headers['Authorization'].split(" ")[1]
+            decoded_token_jwt = jwt.decode(token_jwt, settings.SECRET_KEY, algorithms=settings.SIMPLE_JWT['ALGORITHM'])
+            
+            # create user object
+            user_object = UserModel.objects.get(id=decoded_token_jwt["user_id"])
 
-        serializer = self.get_serializer(data=input_data)
-        serializer.is_valid(raise_exception=True)
-        serializer.validated_data["user"] = user_object
-        serializer.save()
-        headers = self.get_success_headers(serializer.data)
+            serializer = self.get_serializer(data=input_data)
+            serializer.is_valid(raise_exception=True)
+            
+            serializer.validated_data["user"] = user_object
+            product_object = Product.objects.get(id_product=input_data["product"])
+            # product_object = get_object_or_404(Product, id_product=input_data['product'])
+            
+            product_object.stock += serializer.validated_data["added_stock"]
+            
+            serializer.save()
+            product_object.save()
+            
+            headers = self.get_success_headers(serializer.data)
 
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-    
+            return Response({
+                "message": "New stock added to your product",
+                "data": {
+                    "added_stock": serializer.validated_data["added_stock"],
+                    "stock_now": product_object.stock,
+                }
+            }, status=status.HTTP_201_CREATED, headers=headers)
+            
+        except ValidationError as error:
+            return Response({
+                "message": error.default_detail,
+                "error_detail": error.detail,
+            }, status=error.status_code)
+
+        except Exception as error:
+            return Response({
+                "message": str(error),
+                "cause": str(error.__class__),
+            }, status=status.HTTP_400_BAD_REQUEST)
+
 
 class StockOutView(generics.GenericAPIView, mixins.CreateModelMixin):
     permission_classes = [IsAuthenticated]
@@ -174,26 +202,68 @@ class StockOutView(generics.GenericAPIView, mixins.CreateModelMixin):
     serializer_class = StockOutSerializer
     
     def post(self, request, *args, **kwargs):
-        input_data = {
-            "removed_stock": request.data["removed_stock"],
-            "your_price": request.data["your_price"],
-            "date": request.data["date"],
-            "product": kwargs.get("product_id"),
-        }
+        try:
+            input_data = {
+                "removed_stock": request.data["removed_stock"],
+                "your_price": request.data["your_price"],
+                "date": request.data["date"],
+                "product": kwargs.get("product_id"),
+            }
+
+            serializer = self.get_serializer(data=input_data)
+            serializer.is_valid(raise_exception=True)
+
+            product_object = Product.objects.get(id_product=input_data["product"])
+            
+            response_status = None
+            response_body = {}
+
+            if product_object.stock < serializer.validated_data['removed_stock']:
+                response_status = status.HTTP_409_CONFLICT
+                response_body["message"] = "The stock is not enough."
+                response_body["data"] = {
+                    "stock_to_be_remove": serializer.validated_data['removed_stock'],
+                    "stock_now": product_object.stock,
+                }
+
+            elif product_object.stock == 0:
+                response_status = status.HTTP_409_CONFLICT
+                response_body["message"] = "There is no stock for the product."
+
+            else:
+                token_jwt = request.headers['Authorization'].split(" ")[1]
+                decoded_token_jwt = jwt.decode(token_jwt, settings.SECRET_KEY, algorithms=settings.SIMPLE_JWT['ALGORITHM'])
+
+                # create user object
+                user_object = UserModel.objects.get(id=decoded_token_jwt["user_id"])
+                serializer.validated_data['user'] = user_object
+
+                product_object.stock -= serializer.validated_data['removed_stock']
+
+                serializer.save()
+                product_object.save()
+
+                response_status = status.HTTP_201_CREATED
+                response_body["message"] = "The stock has been reduced based your input."
+                response_body["data"] = {
+                    "removed_stock": serializer.validated_data['removed_stock'],
+                    "stock_now": product_object.stock,
+                }
+                
+            return Response(response_body, status=response_status)
         
-        token_jwt = request.headers['Authorization'].split(" ")[1]
-        decoded_token_jwt = jwt.decode(token_jwt, settings.SECRET_KEY, algorithms=settings.SIMPLE_JWT['ALGORITHM'])
-        
-        # create user object
-        user_object = UserModel.objects.get(id=decoded_token_jwt["user_id"])
-        
-        serializer = self.get_serializer(data=input_data)
-        serializer.is_valid(raise_exception=True)
-        serializer.validated_data['user'] = user_object
-        serializer.save()
-        headers = self.get_success_headers(serializer.data)
-        
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        except ValidationError as error:
+            return Response({
+                "message": error.default_detail,
+                "error_detail": error.detail,
+            }, status=error.status_code)
+            
+        except Exception as error:
+            return Response({
+                "message": str(error),
+                "cause": str(error.__class__),
+            }, status=status.HTTP_400_BAD_REQUEST)
+
 
 class graphStockout(APIView):
     permission_classes = [IsAuthenticated]
