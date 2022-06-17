@@ -33,6 +33,7 @@ class pricePredictView(APIView):
         decode = jwt.decode(split[1], secret_code, algorithms=[algorithm])
         data = Product.objects.filter(user_id=decode["user_id"]).values("category", "id_product", "price", "stock")
         x = 0
+        print(request.data)
         for i in data:
             x += i["stock"]
         return Response({
@@ -45,7 +46,11 @@ class pricePredictView(APIView):
         parser = self.serializer(data=request.data)
         
         if parser.is_valid():
-            age = 365*24*60*60
+            user_id = request.headers['Authorization']
+            split = user_id.split(" ")
+            secret_code = settings.SECRET_KEY
+            algorithm = settings.SIMPLE_JWT['ALGORITHM']
+            decode = jwt.decode(split[1], secret_code, algorithms=[algorithm])
             
             if parser.data["cost"] <= 300000:
                 return Response({"message": "Cost must be above 300K"}, status=status.HTTP_400_BAD_REQUEST)
@@ -62,7 +67,12 @@ class pricePredictView(APIView):
             price = (float(prediction_result) * (9585 - 10) + 10)
             conv_money = price *  3900 
             
-            response = Response(
+            Product.objects.save_product(
+                decode['user_id'], parser.data["id"], parser.data['category'], parser.data['stock'], parser.data['height'], 
+                parser.data['width'], parser.data['depth'], parser.data['cost'], parser.data['material'], parser.data['price']
+            )
+
+            return Response(
                 {
                     "id": parser.data["id_product"],
                     "category": parser.data["category"],
@@ -75,42 +85,8 @@ class pricePredictView(APIView):
                     "price": conv_money
                 }
             , status=status.HTTP_201_CREATED)
-            response.set_cookie(key="id", value=parser.data["id_product"], httponly=False, expires=datetime.now() + timedelta(seconds=age), max_age=age)
-            response.set_cookie(key="category", value=parser.data["category"], httponly=False, expires=datetime.now() + timedelta(seconds=age), max_age=age)
-            response.set_cookie(key="material", value=parser.data["material"], httponly=False, expires=datetime.now() + timedelta(seconds=age), max_age=age)
-            response.set_cookie(key="width", value=parser.data["width"], httponly=False, expires=datetime.now() + timedelta(seconds=age), max_age=age)
-            response.set_cookie(key="height", value=parser.data["height"], httponly=False, expires=datetime.now() + timedelta(seconds=age), max_age=age)
-            response.set_cookie(key="depth", value=parser.data["depth"], httponly=False, expires=datetime.now() + timedelta(seconds=age), max_age=age)
-            response.set_cookie(key="stock", value=parser.data["stock"], httponly=False, expires=datetime.now() + timedelta(seconds=age), max_age=age)
-            response.set_cookie(key="cost", value=parser.data["cost"], httponly=False, expires=datetime.now() + timedelta(seconds=age), max_age=age)
-            response.set_cookie(key="price", value=conv_money, httponly=False, expires=datetime.now() + timedelta(seconds=age), max_age=age)
-            return response
         
         return Response({"message": "Failed: Incorrect data type entered"}, status=status.HTTP_400_BAD_REQUEST)
-
-class productSaveView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request):
-        user_id = request.headers['Authorization']
-        split = user_id.split(" ")
-        secret_code = settings.SECRET_KEY
-        algorithm = settings.SIMPLE_JWT['ALGORITHM']
-        decode = jwt.decode(split[1], secret_code, algorithms=[algorithm])
-        draft_cookie = ['id', 'category', 'material', 'width', 'height', 'depth', 'stock', 'cost', 'price']
-
-        try:
-            Product.objects.save_product(
-                decode['user_id'], request.COOKIES["id"], request.COOKIES['category'], request.COOKIES['stock'], request.COOKIES['height'], 
-                request.COOKIES['width'], request.COOKIES['depth'], request.COOKIES['cost'], request.COOKIES['material'], request.COOKIES['price']
-            )
-            response = Response({"message": "Data has been saved"}, status=status.HTTP_201_CREATED)
-            for i in range(len(draft_cookie)):
-                response.delete_cookie(draft_cookie[i])
-            return response
-
-        except:
-            return Response({"message": "Can't save data"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
 
 class getProduct(APIView):
@@ -122,7 +98,7 @@ class getProduct(APIView):
         secret_code = settings.SECRET_KEY
         algorithm = settings.SIMPLE_JWT['ALGORITHM']
         decode = jwt.decode(split[1], secret_code, algorithms=[algorithm])
-
+        x = get_object_or_404(Product, category=category)
         data = Product.objects.filter(user_id=decode["user_id"]).filter(category=category).values("category", "id_product", "price", "stock")
         x = 0
         for i in data:
